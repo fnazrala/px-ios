@@ -14,6 +14,7 @@ open class PaymentResult: NSObject {
     open var payerEmail: String?
     open var _id: String?
     open var statementDescription: String?
+    open var cardId: String?
     
     public init (payment: Payment, paymentData: PaymentData){
         self.status = payment.status
@@ -22,6 +23,7 @@ open class PaymentResult: NSObject {
         self._id = payment._id
         self.payerEmail = payment.payer.email
         self.statementDescription = payment.statementDescriptor
+        self.cardId = String(describing: payment.card.idCard)
     }
     
     public init (status: String, statusDetail: String, paymentData: PaymentData, payerEmail:String?, id: String?, statementDescription: String?) {

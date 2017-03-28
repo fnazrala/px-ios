@@ -374,6 +374,9 @@ open class MercadoPagoCheckout: NSObject {
         if self.viewModel.paymentResult == nil {
             self.viewModel.paymentResult = PaymentResult(payment: self.viewModel.payment!, paymentData: self.viewModel.paymentData)            
         }
+        if viewModel.paymentResult?.status == "rejected" &&  (viewModel.paymentResult?.statusDetail != "cc_rejected_duplicated_payment" || viewModel.paymentResult?.statusDetail != "cc_rejected_insufficient_amount" || viewModel.paymentResult?.statusDetail != "cc_rejected_card_disabled") {
+            self.viewModel.removeEncriptedCvvForPaymentResult()
+        }
 
         let congratsViewController : UIViewController
         if (PaymentTypeId.isOfflineType(paymentTypeId: self.viewModel.paymentData.paymentMethod.paymentTypeId)) {
@@ -482,9 +485,8 @@ open class MercadoPagoCheckout: NSObject {
     }
     
     public func getEncryptedCvv() {
-        let options = KeychainItemOptions(itemClass: .GenericPassword, itemAccessibility: .WhenPasscodeSetThisDeviceOnly)
         let cardSelected = self.viewModel.paymentOptionSelected!
-        KeychainWrapper.standardKeychainAccess().getString(forKey: "CardID_\(cardSelected.getId())", withOptions: options, completion: { (data) in
+        KeychainWrapper.standardKeychainAccess().getString(forKey: viewModel.getEncryptedCvvKey(id: cardSelected.getId()), withOptions: viewModel.keychainOptions, completion: { (data) in
             self.viewModel.updateCheckoutModel(encryptedCVV: data)
             self.executeNextStep()
         })
