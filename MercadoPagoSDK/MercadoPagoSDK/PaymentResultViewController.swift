@@ -190,17 +190,37 @@ open class PaymentResultViewController: MercadoPagoUIViewController, UITableView
         
         if self.viewModel.inProcess(){
             let customCell = PaymentResultScreenPreference.pendingAdditionalInfoCells[indexPath.row]
-            customCell.setDelegate(delegate: self)
-            let cell = customCell.getTableViewCell()
-            cell.selectionStyle = .none
-            return cell
+            return makeCellWith(customCell: customCell, indentifier: "pendingAdditionalCell")
+         //   customCell.setDelegate(delegate: self)
+         //   let cell = customCell.getTableViewCell()
+           // cell.selectionStyle = .none
+           // return cell
         } else {
             let customCell = PaymentResultScreenPreference.approvedAdditionalInfoCells[indexPath.row]
-            customCell.setDelegate(delegate: self)
-            let cell = customCell.getTableViewCell()
-            cell.selectionStyle = .none
-            return cell
+             return makeCellWith(customCell: customCell, indentifier: "approvedAdditionalCell")
+         //   customCell.setDelegate(delegate: self)
+         //   let cell = customCell.getTableViewCell()
+         //   cell.selectionStyle = .none
+         //   return cell
         }
+    }
+    
+    private func makeCellWith(customCell : MPCustomCell, indentifier : String) -> UITableViewCell {
+        let screenSize : CGRect = UIScreen.main.bounds
+        let screenWidth = screenSize.width
+        let customView = customCell.getTableViewCell().contentView
+        customCell.setDelegate(delegate: self)
+        let frame = customView.frame
+        customView.frame = CGRect(x: (screenWidth - frame.size.width) / 2, y: 0, width: frame.size.width, height: customCell.getHeight())
+        let cell = UITableViewCell(style: .default, reuseIdentifier: indentifier)
+        cell.frame = CGRect(x: 0, y: 0, width: frame.size.width, height: frame.size.height)
+        cell.contentView.addSubview(customView)
+        cell.selectionStyle = .none
+        let separatorLine = ViewUtils.getTableCellSeparatorLineView(0, y: customCell.getHeight()-1, width: screenWidth, height: 1)
+        cell.addSubview(separatorLine)
+        cell.contentView.backgroundColor = customView.backgroundColor
+        cell.clipsToBounds = true
+        return cell
     }
     
     private func getCustomSubHeaderCell(indexPath: IndexPath) -> UITableViewCell {
