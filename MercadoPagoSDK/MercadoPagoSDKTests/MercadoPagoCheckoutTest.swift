@@ -15,6 +15,9 @@ class MercadoPagoCheckoutTest: BaseTest {
     override func setUp() {
         super.setUp()
         self.continueAfterFailure = false
+        // Use v1 urls
+        ServicePreference.MP_ENVIROMENT = ServicePreference.MP_PROD_ENV  + "/checkout"
+        ServicePreference.API_VERSION = "API_VERSION"
     }
     
     override func tearDown() {
@@ -78,7 +81,7 @@ class MercadoPagoCheckoutTest: BaseTest {
     /*******************************************/
     /***** Display view controllers tests ******/
     /*******************************************/
-    
+
     func testCollectPaymentMethods(){
         
         let checkoutPreference = MockBuilder.buildCheckoutPreference()
@@ -249,7 +252,7 @@ class MercadoPagoCheckoutTest: BaseTest {
         XCTAssertNotNil(self.mpCheckout?.viewModel.paymentResult)
         XCTAssertEqual(self.mpCheckout?.navigationController.viewControllers.count, 1)
         let lastVC = self.mpCheckout!.navigationController.viewControllers[0]
-        XCTAssertTrue(lastVC.isKind(of: InstructionsRevampViewController.self))
+        XCTAssertTrue(lastVC.isKind(of: InstructionsViewController.self))
         
 
     }
