@@ -371,6 +371,11 @@ class Utils {
         return dictPM![identifier] as! T
     }
     
+    static func isTesting() -> Bool {
+        let environment = ProcessInfo.processInfo.environment
+        return environment["testing"] != nil
+    }
+    
 }
 
 

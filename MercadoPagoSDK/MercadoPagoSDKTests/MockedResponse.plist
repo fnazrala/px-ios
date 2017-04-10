@@ -3408,7 +3408,7 @@
   &quot;site_id&quot;: &quot;MLA&quot;,
   &quot;brand_name&quot;: &quot;asdasd&quot;
 }</string>
-	<key>GET/v1/checkout/preferences/NO_EXCLUSIONS?public_key=PK_MLA</key>
+	<key>GET/v1/checkout/preferences/NO_EXCLUSIONS?public_key=PK_MLA&amp;api_version=API_VERSION</key>
 	<string>{
   &quot;additional_info&quot;: &quot;&quot;,
   &quot;auto_return&quot;: &quot;&quot;,
@@ -3729,7 +3729,7 @@
   &quot;site_id&quot;: &quot;MLA&quot;,
   &quot;brand_name&quot;: &quot;asdasd&quot;
 }</string>
-	<key>GET/v1/checkout/payment_methods/search/options?public_key=PK_MLA&amp;amount=2579.0</key>
+	<key>POST/v1/checkout/payment_methods/search/options?public_key=PK_MLA&amp;amount=2579.0&amp;site_id=MLA&amp;api_version=API_VERSION</key>
 	<string>{
   &quot;groups&quot;: [
     {

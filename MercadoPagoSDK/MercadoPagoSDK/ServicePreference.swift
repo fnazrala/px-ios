@@ -26,7 +26,7 @@ open class ServicePreference : NSObject{
     static let MP_ALPHA_ENV = "/gamma"
     static var MP_TEST_ENV = "/beta"
     static let MP_PROD_ENV = "/v1"
-    static let API_VERSION = "1.3.X"
+    static var API_VERSION = "1.3.X"
     
     static var MP_ENVIROMENT = MP_PROD_ENV  + "/checkout"
     
@@ -201,11 +201,17 @@ open class ServicePreference : NSObject{
     }
 
     static public func setupMPEnvironment() {
-        let isProdEnvironment : Bool = Utils.getSetting(identifier: ServicePreference.kIsProdApiEnvironemnt)
-        if isProdEnvironment {
+        // En caso de correr los tests se toma environment como prod por default
+        if Utils.isTesting() {
             ServicePreference.MP_ENVIROMENT = MP_PROD_ENV  + "/checkout"
         } else {
-            ServicePreference.MP_ENVIROMENT = MP_TEST_ENV  + "/checkout"
+            let isProdEnvironment : Bool = Utils.getSetting(identifier: ServicePreference.kIsProdApiEnvironemnt)
+            if isProdEnvironment {
+                ServicePreference.MP_ENVIROMENT = MP_PROD_ENV  + "/checkout"
+            } else {
+                ServicePreference.MP_ENVIROMENT = MP_TEST_ENV  + "/checkout"
+            }
         }
     }
+
 }

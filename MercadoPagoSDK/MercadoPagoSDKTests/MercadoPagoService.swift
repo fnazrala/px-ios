@@ -33,8 +33,11 @@ open class MercadoPagoService: NSObject {
         }
         
        if method == "POST" {
-            let bodyData = (body as! String).data(using: String.Encoding.utf8)
-         /*   let bodyParams = JSON(data: bodyData!)
+            /*if body != nil {
+                let bodyData = (body as! String).data(using: String.Encoding.utf8)
+            }
+        
+               let bodyParams = JSON(data: bodyData!)
             
             if let public_key = (bodyParams["public_key"].asString) {
                 finalUri = finalUri + "?public_key=" + public_key
@@ -48,13 +51,19 @@ open class MercadoPagoService: NSObject {
         
         do {
             let jsonResponse = try MockManager.getMockResponseFor(finalUri, method: method)
-            if (jsonResponse != nil && jsonResponse!["error"] != nil){
-                failure!(NSError(domain: uri, code: 400, userInfo: nil))
-                return
+            
+            if (jsonResponse != nil){
+                if let _ = jsonResponse!["error"]! {
+                    failure!(NSError(domain: uri, code: 400, userInfo: nil))
+                    return
+                } else {
+                    success(jsonResponse)
+                    //MercadoPagoTestContext.fulfillExpectation(BaseTest.WAIT_FOR_REQUEST_EXPECTATION_DESCRIPTION + uri)
+                }
+                
             }
             
-            success(jsonResponse)
-            //MercadoPagoTestContext.fulfillExpectation(BaseTest.WAIT_FOR_REQUEST_EXPECTATION_DESCRIPTION + uri)
+            
         } catch {
             failure!(NSError(domain: uri, code: 400, userInfo: nil))
         }

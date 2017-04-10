@@ -81,7 +81,39 @@ class MercadoPagoCheckoutTest: BaseTest {
     /*******************************************/
     /***** Display view controllers tests ******/
     /*******************************************/
-
+    
+    func testCollectCheckoutPreference() {
+        let checkoutPreference = MockBuilder.buildCheckoutPreference()
+        let navControllerInstance = UINavigationController()
+        self.mpCheckout = MercadoPagoCheckoutMock(checkoutPreference: checkoutPreference, navigationController: navControllerInstance)
+        
+        self.mpCheckout!.collectCheckoutPreference()
+        
+        // Se obtiene id de MockedResponse
+        XCTAssertEqual("150216849-e131b785-10d3-48c0-a58b-2910935512e0", self.mpCheckout!.viewModel.checkoutPreference._id)
+        
+    }
+    
+    func testCollectPaymentMethodSearch() {
+        let checkoutPreference = MockBuilder.buildCheckoutPreference()
+        let navControllerInstance = UINavigationController()
+        self.mpCheckout = MercadoPagoCheckoutMock(checkoutPreference: checkoutPreference, navigationController: navControllerInstance)
+        
+        XCTAssertNil(self.mpCheckout?.viewModel.rootPaymentMethodOptions)
+        XCTAssertNil(self.mpCheckout?.viewModel.search)
+        XCTAssertNil(self.mpCheckout?.viewModel.availablePaymentMethods)
+        XCTAssertNil(self.mpCheckout?.viewModel.paymentMethodOptions)
+        
+        self.mpCheckout!.collectPaymentMethodSearch()
+        
+        XCTAssertNotNil(self.mpCheckout?.viewModel.rootPaymentMethodOptions)
+        XCTAssertNotNil(self.mpCheckout?.viewModel.search)
+        XCTAssertNotNil(self.mpCheckout?.viewModel.availablePaymentMethods)
+        XCTAssertEqual(self.mpCheckout?.viewModel.availablePaymentMethods!.count, 17)
+        XCTAssertNotNil(self.mpCheckout?.viewModel.paymentMethodOptions)
+        XCTAssertEqual(self.mpCheckout?.viewModel.paymentMethodOptions!.count, 3)
+    }
+    
     func testCollectPaymentMethods(){
         
         let checkoutPreference = MockBuilder.buildCheckoutPreference()
