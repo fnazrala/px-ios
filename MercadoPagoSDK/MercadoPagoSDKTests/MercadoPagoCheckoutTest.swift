@@ -97,6 +97,29 @@ class MercadoPagoCheckoutTest: BaseTest {
         XCTAssertTrue(lastVC.isKind(of: PaymentVaultViewController.self))
     }
     
+    func testValidatePreference(){
+        let checkoutPreference = MockBuilder.buildCheckoutPreference()
+        let navControllerInstance = UINavigationController()
+        // Disable discount
+        let fp = FlowPreference()
+        fp.disableDiscount()
+        MercadoPagoCheckout.setFlowPreference(fp)
+        
+        self.mpCheckout = MercadoPagoCheckoutMock(checkoutPreference: checkoutPreference, navigationController: navControllerInstance)
+        
+        self.mpCheckout!.validatePreference()
+        XCTAssertEqual(navControllerInstance.viewControllers.count, 0)
+        
+        // Evitar ir a buscar preferencia. Preferencia inválida debería mostrar error
+        checkoutPreference.items = nil
+        checkoutPreference._id = nil
+        self.mpCheckout = MercadoPagoCheckout(checkoutPreference: checkoutPreference, navigationController: navControllerInstance)
+        self.mpCheckout!.validatePreference()
+//        XCTAssertNotEqual(navControllerInstance.viewControllers.count, 0)
+//        let lastVC = self.mpCheckout!.navigationController.viewControllers[0]
+//        XCTAssertTrue(lastVC.isKind(of: ErrorViewController.self))
+    }
+    
     func testCollectCard(){
         
         let checkoutPreference = MockBuilder.buildCheckoutPreference()
@@ -194,4 +217,47 @@ class MercadoPagoCheckoutTest: BaseTest {
         XCTAssertTrue(lastVC.isKind(of: CheckoutViewController.self))
     }
     
+    func testDisplayPaymentResult_onlinePayment() {
+        let checkoutPreference = MockBuilder.buildCheckoutPreference()
+        let navControllerInstance = UINavigationController()
+        self.mpCheckout = MercadoPagoCheckout(checkoutPreference: checkoutPreference, navigationController: navControllerInstance)
+        
+        let paymentMethod = MockBuilder.buildPaymentMethod("visa")
+        self.mpCheckout!.viewModel.payment = MockBuilder.buildPayment("visa")
+        self.mpCheckout!.viewModel.paymentData = MockBuilder.buildPaymentData(paymentMethod: paymentMethod)
+        
+        self.mpCheckout!.displayPaymentResult()
+        XCTAssertNotNil(self.mpCheckout?.viewModel.paymentResult)
+        XCTAssertEqual(self.mpCheckout?.navigationController.viewControllers.count, 1)
+        let lastVC = self.mpCheckout!.navigationController.viewControllers[0]
+        XCTAssertTrue(lastVC.isKind(of: PaymentResultViewController.self))
+        
+    }
+    
+    func testDisplayPaymentResult_offlinePayment(){
+        let checkoutPreference = MockBuilder.buildCheckoutPreference()
+        let navControllerInstance = UINavigationController()
+        self.mpCheckout = MercadoPagoCheckout(checkoutPreference: checkoutPreference, navigationController: navControllerInstance)
+        
+        let paymentMethod = MockBuilder.buildPaymentMethod("rapipago", paymentTypeId : "ticket")
+        self.mpCheckout!.viewModel.payment = MockBuilder.buildPayment("rapipago")
+        self.mpCheckout!.viewModel.paymentData = MockBuilder.buildPaymentData(paymentMethod: paymentMethod)
+        
+        self.mpCheckout!.displayPaymentResult()
+        
+        XCTAssertNotNil(self.mpCheckout?.viewModel.paymentResult)
+        XCTAssertEqual(self.mpCheckout?.navigationController.viewControllers.count, 1)
+        let lastVC = self.mpCheckout!.navigationController.viewControllers[0]
+        XCTAssertTrue(lastVC.isKind(of: InstructionsRevampViewController.self))
+        
+
+    }
+}
+
+open class MercadoPagoCheckoutMock : MercadoPagoCheckout {
+
+    override func executeNextStep() {
+        // Do nothing
+        print("Override!!!")
+    }
 }

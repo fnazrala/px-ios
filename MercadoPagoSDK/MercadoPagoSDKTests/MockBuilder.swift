@@ -324,6 +324,10 @@ open class MockBuilder: NSObject {
     class func buildPayment(_ paymentMethodId : String) -> Payment {
         let payment = Payment()
         payment.paymentMethodId = paymentMethodId
+        payment.status = "status"
+        payment.statusDetail = "status_detail"
+        let payer = MockBuilder.buildPayer("payerid")
+        payment.payer = payer
         return payment
     }
     

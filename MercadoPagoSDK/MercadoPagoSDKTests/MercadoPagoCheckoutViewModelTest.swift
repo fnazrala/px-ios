@@ -679,6 +679,24 @@ class MercadoPagoCheckoutViewModelTest: BaseTest {
         
     }
     
+    func testUpdateCheckoutModel_paymentMethods() {
+        let checkoutPreference = MockBuilder.buildCheckoutPreference()
+        let mpCheckoutViewModel  = MercadoPagoCheckoutViewModel(checkoutPreference: checkoutPreference, paymentData : nil, paymentResult : nil, discount : nil)
+        let paymentMethods = [MockBuilder.buildPaymentMethod("visa"), MockBuilder.buildPaymentMethod("amex")]
+        
+        mpCheckoutViewModel.updateCheckoutModel(paymentMethods: paymentMethods, cardToken: nil)
+        
+        XCTAssertEqual(mpCheckoutViewModel.paymentMethods!, paymentMethods)
+        XCTAssertNil(mpCheckoutViewModel.cardToken)
+        
+        let cardToken = MockBuilder.buildCardToken()
+        mpCheckoutViewModel.updateCheckoutModel(paymentMethods: paymentMethods, cardToken: cardToken)
+        XCTAssertEqual(mpCheckoutViewModel.paymentMethods!, paymentMethods)
+        XCTAssertEqual(mpCheckoutViewModel.cardToken, cardToken)
+
+
+    }
+    
     func testUpdateCheckoutModel_paymentMethodSearchOneOption() {
         let checkoutPreference = MockBuilder.buildCheckoutPreference()
         let mpCheckoutViewModel  = MercadoPagoCheckoutViewModel(checkoutPreference: checkoutPreference, paymentData : nil, paymentResult : nil, discount : nil)
@@ -700,6 +718,18 @@ class MercadoPagoCheckoutViewModelTest: BaseTest {
         XCTAssertEqual(mpCheckoutViewModel.paymentOptionSelected!.getId(), creditCardOption.getId())
         
     }
+    
+    func testUpdateCheckoutModel_paymentMethod(){
+        let paymentMethod = MockBuilder.buildPaymentMethod("paymentMethodId")
+        let checkoutPreference = MockBuilder.buildCheckoutPreference()
+        let mpCheckoutViewModel  = MercadoPagoCheckoutViewModel(checkoutPreference: checkoutPreference, paymentData : nil, paymentResult : nil, discount : nil)
+        mpCheckoutViewModel.updateCheckoutModel(paymentMethod: paymentMethod)
+        
+        XCTAssertNotNil(mpCheckoutViewModel.paymentData.paymentMethod)
+        XCTAssertEqual(mpCheckoutViewModel.paymentData.paymentMethod, paymentMethod)
+    }
+    
+    
     
     func testUpdateCheckoutModel_paymentMethodSearchCustomOption() {
         let checkoutPreference = MockBuilder.buildCheckoutPreference()
@@ -759,8 +789,82 @@ class MercadoPagoCheckoutViewModelTest: BaseTest {
         
         MPCheckoutTestAction.selectCustomerCardOption(mpCheckoutViewModel: mpCheckoutViewModel)
         
-        XCTAssertEqual(mpCheckoutViewModel.paymentData.paymentMethod._id, "visa")
+        mpCheckoutViewModel.handleCustomerPaymentMethod()
+        
+                XCTAssertEqual(mpCheckoutViewModel.paymentData.paymentMethod._id, "visa")
+    }
+    
+    func testResetGroupSelection(){
+        let checkoutPreference = MockBuilder.buildCheckoutPreference()
+        let mpCheckoutViewModel  = MercadoPagoCheckoutViewModel(checkoutPreference: checkoutPreference, paymentData : nil, paymentResult : nil, discount : nil)
+        
+        MPCheckoutTestAction.loadGroupsInViewModel(mpCheckoutViewModel: mpCheckoutViewModel)
+        
+        MPCheckoutTestAction.selectAccountMoney(mpCheckoutViewModel: mpCheckoutViewModel)
+        
+        mpCheckoutViewModel.resetGroupSelection()
+        
+        XCTAssertNil(mpCheckoutViewModel.paymentOptionSelected)
+        
+        
+    }
+    
+    func testResetInformation(){
+        let checkoutPreference = MockBuilder.buildCheckoutPreference()
+        let mpCheckoutViewModel  = MercadoPagoCheckoutViewModel(checkoutPreference: checkoutPreference, paymentData : nil, paymentResult : nil, discount : nil)
+        
+        MPCheckoutTestAction.loadGroupsInViewModel(mpCheckoutViewModel: mpCheckoutViewModel)
+        
+        MPCheckoutTestAction.selectAccountMoney(mpCheckoutViewModel: mpCheckoutViewModel)
+        
+        mpCheckoutViewModel.resetInformation()
+        
+        XCTAssertNil(mpCheckoutViewModel.cardToken)
+        XCTAssertNil(mpCheckoutViewModel.issuers)
+        XCTAssertNil(mpCheckoutViewModel.payerCosts)
+        XCTAssertNil(mpCheckoutViewModel.paymentData.paymentMethod)
+        XCTAssertNil(mpCheckoutViewModel.paymentData.issuer)
+        XCTAssertNil(mpCheckoutViewModel.paymentData.payerCost)
+        XCTAssertNil(mpCheckoutViewModel.paymentData.token)
+
+    }
+    
+    func testCleanPaymentResult(){
+        let checkoutPreference = MockBuilder.buildCheckoutPreference()
+        let paymentResult = MockBuilder.buildPaymentResult("status", paymentMethodId: "paymentMethodId")
+        let mpCheckoutViewModel  = MercadoPagoCheckoutViewModel(checkoutPreference: checkoutPreference, paymentData : nil, paymentResult : paymentResult, discount : nil)
+        
+        mpCheckoutViewModel.cleanPaymentResult()
+        
+        XCTAssertNil(mpCheckoutViewModel.payment)
+        XCTAssertNil(mpCheckoutViewModel.paymentResult)
+        XCTAssertFalse(mpCheckoutViewModel.readyToPay)
+        
     }
 
+    func testPrepareForClone(){
+    
+        let checkoutPreference = MockBuilder.buildCheckoutPreference()
+        let paymentResult = MockBuilder.buildPaymentResult("status", paymentMethodId: "paymentMethodId")
+        let mpCheckoutViewModel  = MercadoPagoCheckoutViewModel(checkoutPreference: checkoutPreference, paymentData : nil, paymentResult : paymentResult, discount : nil)
+        
+        mpCheckoutViewModel.prepareForClone()
+        
+        XCTAssertFalse(mpCheckoutViewModel.isCheckoutComplete())
+        XCTAssertNil(mpCheckoutViewModel.payment)
+        XCTAssertNil(mpCheckoutViewModel.paymentResult)
+        XCTAssertFalse(mpCheckoutViewModel.readyToPay)
+    }
+    
+    func testPrepareForNewSelection() {
+        let checkoutPreference = MockBuilder.buildCheckoutPreference()
+        let paymentResult = MockBuilder.buildPaymentResult("status", paymentMethodId: "paymentMethodId")
+        let mpCheckoutViewModel  = MercadoPagoCheckoutViewModel(checkoutPreference: checkoutPreference, paymentData : nil, paymentResult : paymentResult, discount : nil)
+        
+        mpCheckoutViewModel.prepareForNewSelection()
+        
+        XCTAssertFalse(mpCheckoutViewModel.isCheckoutComplete())
+
+    }
     
 }

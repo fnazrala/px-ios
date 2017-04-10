@@ -538,12 +538,7 @@ open class MercadoPagoCheckout: NSObject {
         self.currentLoadingView = vcLoading
     }
     
-    private func pushRootLoading() {
-        self.createCurrentLoading()
-        self.rootViewController = self.currentLoadingView
-        self.pushViewController(viewController : self.rootViewController!, animated: true)
-    }
-    
+
     private func pushViewController(viewController: UIViewController,
                                     animated: Bool,
                                     completion : (() -> Swift.Void)? = nil) {
