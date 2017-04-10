@@ -14,6 +14,7 @@ class MercadoPagoCheckoutTest: BaseTest {
     
     override func setUp() {
         super.setUp()
+        self.continueAfterFailure = false
     }
     
     override func tearDown() {
@@ -115,9 +116,9 @@ class MercadoPagoCheckoutTest: BaseTest {
         checkoutPreference._id = nil
         self.mpCheckout = MercadoPagoCheckout(checkoutPreference: checkoutPreference, navigationController: navControllerInstance)
         self.mpCheckout!.validatePreference()
-//        XCTAssertNotEqual(navControllerInstance.viewControllers.count, 0)
-//        let lastVC = self.mpCheckout!.navigationController.viewControllers[0]
-//        XCTAssertTrue(lastVC.isKind(of: ErrorViewController.self))
+//        XCTAssertNotNil(MercadoPagoCheckoutViewModel.error)
+//        XCTAssertNotNil(MercadoPagoCheckoutViewModel.error!.messageDetail)//,errorMessageExpected)
+
     }
     
     func testCollectCard(){
@@ -258,6 +259,5 @@ open class MercadoPagoCheckoutMock : MercadoPagoCheckout {
 
     override func executeNextStep() {
         // Do nothing
-        print("Override!!!")
     }
 }
