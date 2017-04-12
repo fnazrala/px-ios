@@ -10,7 +10,7 @@ import UIKit
 
 open class MercadoPagoCheckout: NSObject {
     
-
+    
     var viewModel : MercadoPagoCheckoutViewModel
     var navigationController : UINavigationController!
     var viewControllerBase : UIViewController?
@@ -84,17 +84,26 @@ open class MercadoPagoCheckout: NSObject {
     
     func collectCheckoutPreference() {
         self.presentLoading()
-        MPServicesBuilder.getPreference(self.viewModel.checkoutPreference._id, baseURL: MercadoPagoCheckoutViewModel.servicePreference.getDefaultBaseURL(), success: {(checkoutPreference : CheckoutPreference) -> Void in
-            self.viewModel.checkoutPreference = checkoutPreference
-            self.dismissLoading()
-            self.executeNextStep()
+        MPServicesBuilder.getPreference(self.viewModel.checkoutPreference._id, baseURL: MercadoPagoCheckoutViewModel.servicePreference.getDefaultBaseURL(), success: { [weak self] (checkoutPreference : CheckoutPreference) -> Void in
             
-        }, failure: {(error : NSError) -> Void in
-            self.dismissLoading()
-            self.viewModel.errorInputs(error: MPSDKError.convertFrom(error), errorCallback: { (Void) -> Void in
-               self.collectCheckoutPreference()
-            })
-            self.executeNextStep()
+            guard let strongSelf = self else {
+                return
+            }
+            
+            strongSelf.viewModel.checkoutPreference = checkoutPreference
+            strongSelf.dismissLoading()
+            strongSelf.executeNextStep()
+            
+            }, failure: { [weak self] (error : NSError) -> Void in
+                guard let strongSelf = self else {
+                    return
+                }
+                
+                strongSelf.dismissLoading()
+                strongSelf.viewModel.errorInputs(error: MPSDKError.convertFrom(error), errorCallback: { [weak self] (Void) -> Void in
+                    self?.collectCheckoutPreference()
+                })
+                strongSelf.executeNextStep()
         })
     }
     
@@ -108,32 +117,52 @@ open class MercadoPagoCheckout: NSObject {
     
     func collectDirectDiscount() {
         self.presentLoading()
-        MerchantServer.getDirectDiscount(transactionAmount: self.viewModel.getFinalAmount(), payerEmail: self.viewModel.checkoutPreference.payer.email, addtionalInfo: MercadoPagoCheckoutViewModel.servicePreference.discountAdditionalInfo, success: { (discount) in
-            self.viewModel.paymentData.discount = discount
-            self.executeNextStep()
-            self.dismissLoading()
-        }) { (error: NSError) in
-            self.dismissLoading()
-            self.executeNextStep()
+        MerchantServer.getDirectDiscount(transactionAmount: self.viewModel.getFinalAmount(), payerEmail: self.viewModel.checkoutPreference.payer.email, addtionalInfo: MercadoPagoCheckoutViewModel.servicePreference.discountAdditionalInfo, success: { [weak self] (discount) in
+            
+            guard let strongSelf = self else {
+                return
+            }
+            
+            strongSelf.viewModel.paymentData.discount = discount
+            strongSelf.executeNextStep()
+            strongSelf.dismissLoading()
+            
+        }) { [weak self] (error: NSError) in
+            guard let strongSelf = self else {
+                return
+            }
+            
+            strongSelf.dismissLoading()
+            strongSelf.executeNextStep()
         }
     }
     
     func collectPaymentMethodSearch() {
         self.presentLoading()
         MPServicesBuilder.searchPaymentMethods(self.viewModel.getFinalAmount(), defaultPaymenMethodId: self.viewModel.getDefaultPaymentMethodId(), excludedPaymentTypeIds: self.viewModel.getExcludedPaymentTypesIds(), excludedPaymentMethodIds: self.viewModel.getExcludedPaymentMethodsIds(),
-                                               baseURL: MercadoPagoCheckoutViewModel.servicePreference.getDefaultBaseURL(), success: { (paymentMethodSearchResponse: PaymentMethodSearch) -> Void in
-                    self.viewModel.updateCheckoutModel(paymentMethodSearch: paymentMethodSearchResponse)
-                    self.dismissLoading()
-                                                self.executeNextStep()
+             baseURL: MercadoPagoCheckoutViewModel.servicePreference.getDefaultBaseURL(), success: {  [weak self](paymentMethodSearchResponse: PaymentMethodSearch) -> Void in
+                                                
+                   guard let strongSelf = self else {
+                        return
+                   }
+                                                
+                   strongSelf.viewModel.updateCheckoutModel(paymentMethodSearch: paymentMethodSearchResponse)
+                   strongSelf.dismissLoading()
+                   strongSelf.executeNextStep()
+                                                
+                                                
+            }, failure: { [weak self] (error) -> Void in
+                guard let strongSelf = self else {
+                    return
+                }
+                
+                strongSelf.dismissLoading()
+                strongSelf.viewModel.errorInputs(error: MPSDKError.convertFrom(error), errorCallback: { [weak self] (Void) -> Void in
                     
-                    
-            }, failure: { (error) -> Void in
-                self.dismissLoading()
-                self.viewModel.errorInputs(error: MPSDKError.convertFrom(error), errorCallback: { (Void) -> Void in
-                    self.collectPaymentMethodSearch()
+                    self?.collectPaymentMethodSearch()
                 })
-                self.executeNextStep()
-            })
+                strongSelf.executeNextStep()
+        })
     }
     
     
@@ -141,51 +170,61 @@ open class MercadoPagoCheckout: NSObject {
     func collectPaymentMethods(){
         // Se limpia paymentData antes de ofrecer selección de medio de pago
         self.viewModel.paymentData.clear()
-        let paymentMethodSelectionStep = PaymentVaultViewController(viewModel: self.viewModel.paymentVaultViewModel(), callback : { (paymentOptionSelected : PaymentMethodOption) -> Void  in
-            self.viewModel.updateCheckoutModel(paymentOptionSelected : paymentOptionSelected)
-            self.viewModel.rootVC = false
-            self.executeNextStep()
+        let paymentMethodSelectionStep = PaymentVaultViewController(viewModel: self.viewModel.paymentVaultViewModel(), callback : { [weak self] (paymentOptionSelected : PaymentMethodOption) -> Void  in
+            
+            guard let strongSelf = self else {
+                return
+            }
+            
+            strongSelf.viewModel.updateCheckoutModel(paymentOptionSelected : paymentOptionSelected)
+            strongSelf.viewModel.rootVC = false
+            strongSelf.executeNextStep()
         })
         
         self.pushViewController(viewController : paymentMethodSelectionStep, animated: true)
     }
     
-
+    
     func collectCard(){
         
-        let cardFormStep = CardFormViewController(cardFormManager: self.viewModel.cardFormManager(), callback: { (paymentMethods, cardToken) in
-            self.viewModel.updateCheckoutModel(paymentMethods: paymentMethods, cardToken:cardToken)
-            self.executeNextStep()
+        let cardFormStep = CardFormViewController(cardFormManager: self.viewModel.cardFormManager(), callback: { [weak self](paymentMethods, cardToken) in
+            
+            guard let strongSelf = self else {
+                return
+            }
+            
+            strongSelf.viewModel.updateCheckoutModel(paymentMethods: paymentMethods, cardToken:cardToken)
+            strongSelf.executeNextStep()
         })
         self.pushViewController(viewController : cardFormStep, animated: true)
     }
     
     func collectIdentification() {
-        let identificationStep = IdentificationViewController (callback: { (identification : Identification) in
-            self.viewModel.updateCheckoutModel(identification : identification)
-            self.executeNextStep()
-        }, errorExitCallback: { [weak self] in
-            
-            guard let object = self else {
-                return 
+        let identificationStep = IdentificationViewController (callback: { [weak self] (identification : Identification) in
+            guard let strongSelf = self else {
+                return
             }
-            object.finish()
+            
+            strongSelf.viewModel.updateCheckoutModel(identification : identification)
+            strongSelf.executeNextStep()
+            }, errorExitCallback: { [weak self] in
+                self?.finish()
         })
         
         identificationStep.callbackCancel = {[weak self] in
-            
-            guard let object = self else {
-                return
-            }
-            object.navigationController.popViewController(animated: true)
+            self?.navigationController.popViewController(animated: true)
         }
         self.pushViewController(viewController : identificationStep, animated: true)
     }
     
     func collectCreditDebit(){
-        let crediDebitStep = AdditionalStepViewController(viewModel: self.viewModel.debitCreditViewModel(), callback: { (paymentMethod) in
-            self.viewModel.updateCheckoutModel(paymentMethod: paymentMethod as! PaymentMethod)
-            self.executeNextStep()
+        let crediDebitStep = AdditionalStepViewController(viewModel: self.viewModel.debitCreditViewModel(), callback: { [weak self] (paymentMethod) in
+            guard let strongSelf = self else {
+                return
+            }
+            
+            strongSelf.viewModel.updateCheckoutModel(paymentMethod: paymentMethod as! PaymentMethod)
+            strongSelf.executeNextStep()
         })
         self.pushViewController(viewController : crediDebitStep, animated: true)
     }
@@ -193,30 +232,41 @@ open class MercadoPagoCheckout: NSObject {
     func collectIssuers(){
         self.presentLoading()
         let bin = self.viewModel.cardToken?.getBin()
-        MPServicesBuilder.getIssuers(self.viewModel.paymentData.paymentMethod, bin: bin, baseURL: MercadoPagoCheckoutViewModel.servicePreference.getDefaultBaseURL(), success: { (issuers) -> Void in
+        MPServicesBuilder.getIssuers(self.viewModel.paymentData.paymentMethod, bin: bin, baseURL: MercadoPagoCheckoutViewModel.servicePreference.getDefaultBaseURL(), success: { [weak self] (issuers) -> Void in
+            guard let strongSelf = self else {
+                return
+            }
             
-            self.viewModel.issuers = issuers
+            strongSelf.viewModel.issuers = issuers
             
             if issuers.count == 1 {
-                self.viewModel.updateCheckoutModel(issuer: issuers[0])
+                strongSelf.viewModel.updateCheckoutModel(issuer: issuers[0])
             }
-            self.dismissLoading()
-            self.executeNextStep()
+            strongSelf.dismissLoading()
+            strongSelf.executeNextStep()
             
-        }) { (error) -> Void in
-            self.dismissLoading()
-            self.viewModel.errorInputs(error: MPSDKError.convertFrom(error), errorCallback: { (Void) in
-                self.collectIssuers()
+        }) { [weak self] (error) -> Void in
+            guard let strongSelf = self else {
+                return
+            }
+            
+            strongSelf.dismissLoading()
+            strongSelf.viewModel.errorInputs(error: MPSDKError.convertFrom(error), errorCallback: { [weak self] (Void) in
+                self?.collectIssuers()
             })
-            self.executeNextStep()
+            strongSelf.executeNextStep()
         }
         
     }
     
     func startIssuersScreen() {
-        let issuerStep = AdditionalStepViewController(viewModel: self.viewModel.issuerViewModel(), callback: { (issuer) in
-            self.viewModel.updateCheckoutModel(issuer: issuer as! Issuer?)
-            self.executeNextStep()
+        let issuerStep = AdditionalStepViewController(viewModel: self.viewModel.issuerViewModel(), callback: { [weak self](issuer) in
+            guard let strongSelf = self else {
+                return
+            }
+            
+            strongSelf.viewModel.updateCheckoutModel(issuer: issuer as! Issuer?)
+            strongSelf.executeNextStep()
         })
         issuerStep.callbackCancel = {
             self.viewModel.issuers = nil
@@ -224,7 +274,7 @@ open class MercadoPagoCheckout: NSObject {
         }
         self.navigationController.pushViewController(issuerStep, animated: true)
     }
-
+    
     
     func createCardToken(cardInformation: CardInformation? = nil, securityCode: String? = nil) {
         guard let cardInfo = cardInformation else {
@@ -236,7 +286,7 @@ open class MercadoPagoCheckout: NSObject {
                 return // TODO Refactor : Tenemos unos lios barbaros con CardInformation y CardInformationForm, no entiendo porque hay uno y otr
             }
             cloneCardToken(token: token, securityCode: securityCode!)
-        
+            
         } else {
             createSavedCardToken(cardInformation: cardInfo, securityCode: securityCode!)
         }
@@ -245,17 +295,25 @@ open class MercadoPagoCheckout: NSObject {
     func createNewCardToken() {
         self.presentLoading()
         
-        MPServicesBuilder.createNewCardToken(self.viewModel.cardToken!, baseURL: MercadoPagoCheckoutViewModel.servicePreference.getGatewayURL(), success: { (token : Token?) -> Void in
-            self.viewModel.updateCheckoutModel(token: token!)
-            self.dismissLoading()
-            self.executeNextStep()
-        
-        }, failure : { (error) -> Void in
-            self.viewModel.errorInputs(error: MPSDKError.convertFrom(error), errorCallback: { (Void) in
-                self.createNewCardToken()
-            })
-            self.dismissLoading()
-            self.executeNextStep()
+        MPServicesBuilder.createNewCardToken(self.viewModel.cardToken!, baseURL: MercadoPagoCheckoutViewModel.servicePreference.getGatewayURL(), success: { [weak self] (token : Token?) -> Void in
+            guard let strongSelf = self else {
+                return
+            }
+            
+            strongSelf.viewModel.updateCheckoutModel(token: token!)
+            strongSelf.dismissLoading()
+            strongSelf.executeNextStep()
+            
+            }, failure : { [weak self] (error) -> Void in
+                guard let strongSelf = self else {
+                    return
+                }
+                
+                strongSelf.viewModel.errorInputs(error: MPSDKError.convertFrom(error), errorCallback: { [weak self] (Void) in
+                    self?.createNewCardToken()
+                })
+                strongSelf.dismissLoading()
+                strongSelf.executeNextStep()
         })
     }
     
@@ -265,65 +323,90 @@ open class MercadoPagoCheckout: NSObject {
         let cardInformation = self.viewModel.paymentOptionSelected as! CardInformation
         let saveCardToken = SavedCardToken(card: cardInformation, securityCode: securityCode, securityCodeRequired: true)
         
-        MPServicesBuilder.createToken(saveCardToken, baseURL: MercadoPagoCheckoutViewModel.servicePreference.getGatewayURL(), success: { (token) in
+        MPServicesBuilder.createToken(saveCardToken, baseURL: MercadoPagoCheckoutViewModel.servicePreference.getGatewayURL(), success: { [weak self] (token) in
+            guard let strongSelf = self else {
+                return
+            }
+            
             if token.lastFourDigits.isEmpty {
                 token.lastFourDigits = cardInformation.getCardLastForDigits()
             }
-            self.viewModel.updateCheckoutModel(token: token)
-            self.dismissLoading()
-            self.executeNextStep()
+            strongSelf.viewModel.updateCheckoutModel(token: token)
+            strongSelf.dismissLoading()
+            strongSelf.executeNextStep()
             
-        }, failure: { (error) in
-            self.dismissLoading()
-            self.viewModel.errorInputs(error: MPSDKError.convertFrom(error), errorCallback: { (Void) in
-                self.createSavedCardToken(cardInformation: cardInformation, securityCode: securityCode)
-            })
-            self.executeNextStep()
+            }, failure: { [weak self] (error) in
+                guard let strongSelf = self else {
+                    return
+                }
+                
+                strongSelf.dismissLoading()
+                strongSelf.viewModel.errorInputs(error: MPSDKError.convertFrom(error), errorCallback: { [weak self] (Void) in
+                    self?.createSavedCardToken(cardInformation: cardInformation, securityCode: securityCode)
+                })
+                strongSelf.executeNextStep()
         })
     }
     
     func cloneCardToken(token: Token, securityCode: String) {
         self.presentLoading()
-        MPServicesBuilder.cloneToken(token,securityCode:securityCode, success: { (token) in
-            self.viewModel.updateCheckoutModel(token: token)
-            self.dismissLoading()
-            self.executeNextStep()
+        MPServicesBuilder.cloneToken(token,securityCode:securityCode, success: { [weak self] (token) in
+            guard let strongSelf = self else {
+                return
+            }
             
-        }, failure: { (error) in
-            self.dismissLoading()
-            self.viewModel.errorInputs(error: MPSDKError.convertFrom(error), errorCallback: { (Void) in
-                self.cloneCardToken(token: token, securityCode: securityCode)
-            })
-            self.executeNextStep()
+            strongSelf.viewModel.updateCheckoutModel(token: token)
+            strongSelf.dismissLoading()
+            strongSelf.executeNextStep()
+            
+            }, failure: { [weak self] (error) in
+                guard let strongSelf = self else {
+                    return
+                }
+                
+                strongSelf.dismissLoading()
+                strongSelf.viewModel.errorInputs(error: MPSDKError.convertFrom(error), errorCallback: { [weak self] (Void) in
+                    self?.cloneCardToken(token: token, securityCode: securityCode)
+                })
+                strongSelf.executeNextStep()
         })
     }
-
+    
     func collectPayerCosts(updateCallback:((Void)->Void)? = nil) {
         self.presentLoading()
         let bin = self.viewModel.cardToken?.getBin()
-        MPServicesBuilder.getInstallments(bin, amount: self.viewModel.getFinalAmount(), issuer: self.viewModel.paymentData.issuer, paymentMethodId: self.viewModel.paymentData.paymentMethod._id, baseURL: MercadoPagoCheckoutViewModel.servicePreference.getDefaultBaseURL(),success: { (installments) -> Void in
-            self.viewModel.payerCosts = installments[0].payerCosts
+        
+        MPServicesBuilder.getInstallments(bin, amount: self.viewModel.getFinalAmount(), issuer: self.viewModel.paymentData.issuer, paymentMethodId: self.viewModel.paymentData.paymentMethod._id, baseURL: MercadoPagoCheckoutViewModel.servicePreference.getDefaultBaseURL(),success: { [weak self] (installments) -> Void in
+            guard let strongSelf = self else {
+                return
+            }
             
-            let defaultPayerCost = self.viewModel.checkoutPreference.paymentPreference?.autoSelectPayerCost(installments[0].payerCosts)
+            strongSelf.viewModel.payerCosts = installments[0].payerCosts
+            
+            let defaultPayerCost = strongSelf.viewModel.checkoutPreference.paymentPreference?.autoSelectPayerCost(installments[0].payerCosts)
             if defaultPayerCost != nil {
-                self.viewModel.updateCheckoutModel(payerCost: defaultPayerCost)
+                strongSelf.viewModel.updateCheckoutModel(payerCost: defaultPayerCost)
             }
             if let updateCallback = updateCallback {
                 updateCallback()
-                self.dismissLoading()
+                strongSelf.dismissLoading()
             } else {
                 
-                self.dismissLoading()
-                self.executeNextStep()
+                strongSelf.dismissLoading()
+                strongSelf.executeNextStep()
             }
-
             
-        }) { (error) -> Void in
-            self.dismissLoading()
-            self.viewModel.errorInputs(error: MPSDKError.convertFrom(error), errorCallback: { (Void) in
-                self.collectPayerCosts()
+            
+        }) { [weak self] (error) -> Void in
+            guard let strongSelf = self else {
+                return
+            }
+            
+            strongSelf.dismissLoading()
+            strongSelf.viewModel.errorInputs(error: MPSDKError.convertFrom(error), errorCallback: { [weak self] (Void) in
+                self?.collectPayerCosts()
             })
-            self.executeNextStep()
+            strongSelf.executeNextStep()
         }
         
     }
@@ -332,9 +415,13 @@ open class MercadoPagoCheckout: NSObject {
         
         let payerCostViewModel = self.viewModel.payerCostViewModel()
         
-        let payerCostStep = AdditionalStepViewController(viewModel: payerCostViewModel, callback: { (payerCost) in
-            self.viewModel.updateCheckoutModel(payerCost: payerCost as! PayerCost?)
-            self.executeNextStep()
+        let payerCostStep = AdditionalStepViewController(viewModel: payerCostViewModel, callback: { [weak self] (payerCost) in
+            guard let strongSelf = self else {
+                return
+            }
+            
+            strongSelf.viewModel.updateCheckoutModel(payerCost: payerCost as! PayerCost?)
+            strongSelf.executeNextStep()
         })
         payerCostStep.callbackCancel = {
             self.viewModel.payerCosts = nil
@@ -354,59 +441,73 @@ open class MercadoPagoCheckout: NSObject {
         }
         self.pushViewController(viewController : payerCostStep, animated: true)
     }
-
+    
     
     func collectPaymentData() {
-            let checkoutVC = CheckoutViewController(viewModel: self.viewModel.checkoutViewModel(), callbackPaymentData: {(paymentData : PaymentData) -> Void in
-                self.viewModel.updateCheckoutModel(paymentData: paymentData)
-                if paymentData.paymentMethod == nil && MercadoPagoCheckoutViewModel.changePaymentMethodCallback != nil {
-                    MercadoPagoCheckoutViewModel.changePaymentMethodCallback!()
+        let checkoutVC = CheckoutViewController(viewModel: self.viewModel.checkoutViewModel(), callbackPaymentData: { [weak self] (paymentData : PaymentData) -> Void in
+            guard let strongSelf = self else {
+                return
+            }
+            
+            strongSelf.viewModel.updateCheckoutModel(paymentData: paymentData)
+            if paymentData.paymentMethod == nil && MercadoPagoCheckoutViewModel.changePaymentMethodCallback != nil {
+                MercadoPagoCheckoutViewModel.changePaymentMethodCallback!()
+            }
+            strongSelf.executeNextStep()
+            
+            }, callbackCancel : { [weak self] Void -> Void in
+                guard let strongSelf = self else {
+                    return
                 }
-                self.executeNextStep()
-            }, callbackCancel : { Void -> Void in
-                self.viewModel.setIsCheckoutComplete(isCheckoutComplete: true)
-                self.executeNextStep()
-            }, callbackConfirm : {(paymentData : PaymentData) -> Void in
-                self.viewModel.updateCheckoutModel(paymentData: paymentData)
+                
+                strongSelf.viewModel.setIsCheckoutComplete(isCheckoutComplete: true)
+                strongSelf.executeNextStep()
+                
+            }, callbackConfirm : {[weak self] (paymentData : PaymentData) -> Void in
+                guard let strongSelf = self else {
+                    return
+                }
+                
+                strongSelf.viewModel.updateCheckoutModel(paymentData: paymentData)
                 if MercadoPagoCheckoutViewModel.paymentDataConfirmCallback != nil {
-                    MercadoPagoCheckoutViewModel.paymentDataConfirmCallback!(self.viewModel.paymentData)
+                    MercadoPagoCheckoutViewModel.paymentDataConfirmCallback!(strongSelf.viewModel.paymentData)
                 } else {
-                    self.executeNextStep()
+                    strongSelf.executeNextStep()
                 }
-            })
+        })
         
         self.pushViewController(viewController: checkoutVC, animated: true, completion: {
             self.cleanNavigationStack()
         })
     }
-	
-	func cleanNavigationStack () {
-		
-		// TODO WALLET
+    
+    func cleanNavigationStack () {
+        
+        // TODO WALLET
         var  newNavigationStack = self.navigationController.viewControllers.filter {!$0.isKind(of:MercadoPagoUIViewController.self) || $0.isKind(of:CheckoutViewController.self);
         }
         self.navigationController.viewControllers = newNavigationStack;
         
-	}
-	
+    }
+    
     private func executePaymentDataCallback() {
         if MercadoPagoCheckoutViewModel.paymentDataCallback != nil {
             MercadoPagoCheckoutViewModel.paymentDataCallback!(self.viewModel.paymentData)
         }
-	}
+    }
     
     func collectSecurityCode(){
-        let securityCodeVc = SecurityCodeViewController(viewModel: self.viewModel.savedCardSecurityCodeViewModel(), collectSecurityCodeCallback : { (cardInformation: CardInformationForm, securityCode: String) -> Void in
-            self.createCardToken(cardInformation: cardInformation as! CardInformation, securityCode: securityCode)
-
+        let securityCodeVc = SecurityCodeViewController(viewModel: self.viewModel.savedCardSecurityCodeViewModel(), collectSecurityCodeCallback : { [weak self] (cardInformation: CardInformationForm, securityCode: String) -> Void in
+            self?.createCardToken(cardInformation: cardInformation as! CardInformation, securityCode: securityCode)
+            
         })
         self.pushViewController(viewController : securityCodeVc, animated: true)
         
     }
     
     func collectSecurityCodeForRetry(){
-        let securityCodeVc = SecurityCodeViewController(viewModel: self.viewModel.cloneTokenSecurityCodeViewModel(), collectSecurityCodeCallback: { (cardInformation: CardInformationForm, securityCode: String) -> Void in
-            self.cloneCardToken(token: cardInformation as! Token, securityCode: securityCode)
+        let securityCodeVc = SecurityCodeViewController(viewModel: self.viewModel.cloneTokenSecurityCodeViewModel(), collectSecurityCodeCallback: { [weak self] (cardInformation: CardInformationForm, securityCode: String) -> Void in
+            self?.cloneCardToken(token: cardInformation as! Token, securityCode: securityCode)
             
         })
         self.pushViewController(viewController : securityCodeVc, animated: true)
@@ -431,41 +532,54 @@ open class MercadoPagoCheckout: NSObject {
         } else {
             paymentBody = self.viewModel.paymentData.toJSON()
         }
-    
-        MerchantServer.createPayment(paymentUrl : MercadoPagoCheckoutViewModel.servicePreference.getPaymentURL(), paymentUri : MercadoPagoCheckoutViewModel.servicePreference.getPaymentURI(), paymentBody : paymentBody as NSDictionary, success: {(payment : Payment) -> Void in
-            self.viewModel.updateCheckoutModel(payment: payment)
-            self.dismissLoading()
-            self.executeNextStep()
+        
+        MerchantServer.createPayment(paymentUrl : MercadoPagoCheckoutViewModel.servicePreference.getPaymentURL(), paymentUri : MercadoPagoCheckoutViewModel.servicePreference.getPaymentURI(), paymentBody : paymentBody as NSDictionary, success: { [weak self] (payment : Payment) -> Void in
+            guard let strongSelf = self else {
+                return
+            }
             
-        }, failure: {(error : NSError) -> Void in
-            self.dismissLoading()
-            self.viewModel.errorInputs(error: MPSDKError.convertFrom(error), errorCallback: { (Void) in
-                self.createPayment()
-            })
-            self.executeNextStep()
+            strongSelf.viewModel.updateCheckoutModel(payment: payment)
+            strongSelf.dismissLoading()
+            strongSelf.executeNextStep()
+            
+            }, failure: {[weak self] (error : NSError) -> Void in
+                guard let strongSelf = self else {
+                    return
+                }
+                
+                strongSelf.dismissLoading()
+                strongSelf.viewModel.errorInputs(error: MPSDKError.convertFrom(error), errorCallback: { [weak self] (Void) in
+                    self?.createPayment()
+                })
+                strongSelf.executeNextStep()
         })
     }
     
     func displayPaymentResult() {
         // TODO : por que dos? esta bien? no hay view models, ver que onda
         if self.viewModel.paymentResult == nil {
-            self.viewModel.paymentResult = PaymentResult(payment: self.viewModel.payment!, paymentData: self.viewModel.paymentData)            
+            self.viewModel.paymentResult = PaymentResult(payment: self.viewModel.payment!, paymentData: self.viewModel.paymentData)
         }
-
+        
         let congratsViewController : UIViewController
         if (PaymentTypeId.isOnlineType(paymentTypeId: self.viewModel.paymentData.paymentMethod.paymentTypeId)) {
-            congratsViewController = PaymentResultViewController(paymentResult: self.viewModel.paymentResult!, checkoutPreference: self.viewModel.checkoutPreference, paymentResultScreenPreference: self.viewModel.paymentResultScreenPreference, callback: { (state : PaymentResult.CongratsState) in
+            congratsViewController = PaymentResultViewController(paymentResult: self.viewModel.paymentResult!, checkoutPreference: self.viewModel.checkoutPreference, paymentResultScreenPreference: self.viewModel.paymentResultScreenPreference, callback: { [weak self] (state : PaymentResult.CongratsState) in
+            
+            guard let strongSelf = self else {
+                return
+            }
                 if state == PaymentResult.CongratsState.call_FOR_AUTH {
-                    self.navigationController.setNavigationBarHidden(false, animated: false)
-                    self.viewModel.prepareForClone()
-                    self.collectSecurityCodeForRetry()
+                    strongSelf.navigationController.setNavigationBarHidden(false, animated: false)
+                    strongSelf.viewModel.prepareForClone()
+                    strongSelf.collectSecurityCodeForRetry()
                 } else if state == PaymentResult.CongratsState.cancel_RETRY || state == PaymentResult.CongratsState.cancel_SELECT_OTHER {
-                    self.navigationController.setNavigationBarHidden(false, animated: false)
-                    self.viewModel.prepareForNewSelection()
-                    self.executeNextStep()
+                    strongSelf.navigationController.setNavigationBarHidden(false, animated: false)
+                    strongSelf.viewModel.prepareForNewSelection()
+                    strongSelf.executeNextStep()
+
                     
                 }else{
-                    self.finish()
+                    strongSelf.finish()
                 }
                 
             })
@@ -481,10 +595,10 @@ open class MercadoPagoCheckout: NSObject {
         // Display error
         let errorStep = ErrorViewController(error: MercadoPagoCheckoutViewModel.error, callback: nil, callbackCancel: {[weak self] in
             
-            guard let object = self else {
+            guard let strongSelf = self else {
                 return
             }
-            object.finish()
+            strongSelf.finish()
             
         })
         // Limpiar error anterior
@@ -530,7 +644,7 @@ open class MercadoPagoCheckout: NSObject {
     
     
     func presentLoading(animated : Bool = false, completion: (() -> Swift.Void)? = nil) {
-       self.countLoadings += 1
+        self.countLoadings += 1
         if self.countLoadings == 1 {
             let when = DispatchTime.now() + 0.3
             DispatchQueue.main.asyncAfter(deadline: when) {
@@ -578,7 +692,7 @@ open class MercadoPagoCheckout: NSObject {
         self.navigationController.viewControllers = currentViewControllers
     }
     
-
+    
 }
 
 extension MercadoPagoCheckout {
@@ -622,5 +736,5 @@ extension MercadoPagoCheckout {
     open static func setCallback(callback : @escaping (Void) -> Void) {
         MercadoPagoCheckoutViewModel.callback = callback
     }
-
+    
 }
