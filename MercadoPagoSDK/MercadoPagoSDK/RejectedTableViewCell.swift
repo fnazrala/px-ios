@@ -60,7 +60,8 @@ class RejectedTableViewCell: UITableViewCell {
                     }
 
                 } else {
-                    self.subtitile.text = title.localized
+                    let paymentMethodName = paymentResult.paymentData!.paymentMethod.name.localized
+                    self.subtitile.text = (title.localized as NSString).replacingOccurrences(of: "%0", with: "\(paymentMethodName)")
                 }
             }
         } else if paymentResult.status == "in_process" {
