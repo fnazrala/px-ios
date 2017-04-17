@@ -554,8 +554,7 @@ open class CheckoutViewModel: NSObject {
         // Productos + customSummaryRows
         numberOfRows += summaryRows.count
         
-        // Total
-        numberOfRows = numberOfRows + 1
+        numberOfRows += 1
         return numberOfRows
         
     }
